@@ -44,7 +44,7 @@ class Window(tk.Tk):
         # window settings
         self.title("Elden Ring Save File Manager")
         self.resizable(False, False)
-        self.geometry(window_pos(520, 300))
+        self.geometry(window_pos(600, 320))
 
         # check for save file loc
         if os.path.exists('save_file_location.txt'):
@@ -75,24 +75,35 @@ class Window(tk.Tk):
             pady=(20, 0), padx=(10, 0))
 
         # backup button
-        Button(self, text="backup current save file", width=25, command=self.backup_file_to_zip).grid(row=2, column=0,
+        # custom backup name
+        Label(self, width=25, text="Custom backup name -->").grid(row=2, column=0,
+                                                                  rowspan=2,
+                                                                  pady=(20, 0),
+                                                                  padx=(10, 0), sticky=W)
+        self.backup_name = Entry(self, width=50)
+        self.backup_name.grid(row=2, column=1,
+                              rowspan=2,
+                              pady=(20, 0),
+                              padx=(10, 0), sticky=W)
+
+        Button(self, text="backup current save file", width=25, command=self.backup_file_to_zip).grid(row=4, column=0,
                                                                                                       rowspan=2,
                                                                                                       pady=(20, 0),
                                                                                                       padx=(10, 0))
-        Label(self, width=200, textvariable=self.backup_state).grid(row=2, column=1, rowspan=2, padx=(10, 0),
+        Label(self, width=200, textvariable=self.backup_state).grid(row=4, column=1, rowspan=2, padx=(10, 0),
                                                                     pady=(20, 0))
 
         # restore save
-        Button(self, text="Restore previous save file", width=25, command=self.restore_file_from_zip).grid(row=4,
+        Button(self, text="Restore previous save file", width=25, command=self.restore_file_from_zip).grid(row=6,
                                                                                                            column=0,
                                                                                                            rowspan=2,
                                                                                                            pady=(20, 0),
                                                                                                            padx=(10, 0))
-        Label(self, width=200, textvariable=self.restore_state).grid(row=4, column=1, rowspan=2, padx=(10, 0),
+        Label(self, width=200, textvariable=self.restore_state).grid(row=6, column=1, rowspan=2, padx=(10, 0),
                                                                      pady=(20, 0))
 
         # log area
-        self.log = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=70, height=8)
+        self.log = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=80, height=8)
         self.log.grid(row=8, column=0, columnspan=2, sticky=W, pady=10, padx=10)
         self.log.configure(font='Arial 9 ')
 
@@ -123,15 +134,24 @@ class Window(tk.Tk):
 
     # save file to zip
     def backup_file_to_zip(self):
-
+        custom_name = self.backup_name.get().replace(" ", "_")
         files_dir = self.working_dir.get()
 
         now = datetime.now()
-        dt_string = now.strftime("[%d-%m-%Y]-[%H-%M-%S-%p]")
+        date_string = now.strftime("[%d-%m-%Y]")
+        time_string = now.strftime("[%H-%M-%S-%p]")
 
-        file_name = f'''Elden_Ring_Save_{dt_string}'''
+        file_name = f'''Elden_Ring_Save-{date_string}{time_string}'''
 
+        if custom_name:
+            file_name = f'''Elden_Ring_Save[{custom_name}]-{date_string}-{time_string}'''
+
+        # make zip
         make_zip = shutil.make_archive(os.path.join(root, "saves", file_name), 'zip', files_dir)
+
+        # clear entry box
+        self.backup_name.delete(0, 'end')
+
         with open('last_backup.txt', 'w') as file:
             file.write(f'''Last backup : {file_name}''')
 
@@ -142,7 +162,8 @@ class Window(tk.Tk):
 
     def restore_file_from_zip(self):
 
-        save_to_restore = fd.askopenfilename(initialdir=os.path.join(root,'saves'), title="Select save file to restore...")
+        save_to_restore = fd.askopenfilename(initialdir=os.path.join(root, 'saves'),
+                                             title="Select save file to restore...")
         restore_path = self.working_dir.get()
 
         if not save_to_restore:
