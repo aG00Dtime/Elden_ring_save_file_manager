@@ -8,12 +8,20 @@ from tkinter import *
 from tkinter import scrolledtext
 from tkinter.ttk import *
 
+
 root = os.path.abspath(os.curdir)
+
+
+def get_time():
+    now = datetime.now()
+    date_string = now.strftime("[%d-%m-%Y]")
+    time_string = now.strftime("[%H-%M-%S-%p]")
+    return date_string, time_string
 
 
 def window_pos(w, h):
     """Takes width and height of a window as arguments and returns a tkinter geometry string that centers the window
-    on the screen , usage eg. geometry(window_pos(500,500))"""
+    on the screen , usage e.g. geometry(window_pos(500,500))"""
     # dummy window to get screen size
     dummy = Tk()
 
@@ -39,12 +47,11 @@ class Window(tk.Tk):
         self.working_dir = StringVar()
         self.backup_state = StringVar()
         self.restore_state = StringVar()
-        self.log_text = StringVar()
 
         # window settings
         self.title("Elden Ring Save File Manager")
         self.resizable(False, False)
-        self.geometry(window_pos(600, 320))
+        self.geometry(window_pos(520, 320))
 
         # check for save file loc
         if os.path.exists('save_file_location.txt'):
@@ -105,7 +112,7 @@ class Window(tk.Tk):
         # log area
         self.log = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=80, height=8)
         self.log.grid(row=8, column=0, columnspan=2, sticky=W, pady=10, padx=10)
-        self.log.configure(font='Arial 9 ')
+        self.log.configure(font='arial 8 ')
 
         self.mainloop()
 
@@ -137,14 +144,12 @@ class Window(tk.Tk):
         custom_name = self.backup_name.get().replace(" ", "_")
         files_dir = self.working_dir.get()
 
-        now = datetime.now()
-        date_string = now.strftime("[%d-%m-%Y]")
-        time_string = now.strftime("[%H-%M-%S-%p]")
+        date = get_time()
 
-        file_name = f'''Elden_Ring_Save-{date_string}{time_string}'''
+        file_name = f'''ER-Save-{date[0]}-{date[1]}'''
 
         if custom_name:
-            file_name = f'''Elden_Ring_Save[{custom_name}]-{date_string}-{time_string}'''
+            file_name = f'''ER-Save-[{custom_name}]-{date[0]}-{date[1]}'''
 
         # make zip
         make_zip = shutil.make_archive(os.path.join(root, "saves", file_name), 'zip', files_dir)
@@ -157,9 +162,10 @@ class Window(tk.Tk):
 
         if make_zip:
             self.backup_state.set(f'''Saved as {file_name}''')
-            self.log.insert('end', f'''Backup Created as {file_name} \n''')
-            # mb.showinfo(message=f"""Zip Created as {file_name}""")
 
+            self.update_log(f'''Backup Created as {file_name} \n''')
+
+    # restore save
     def restore_file_from_zip(self):
 
         save_to_restore = fd.askopenfilename(initialdir=os.path.join(root, 'saves'),
@@ -167,17 +173,24 @@ class Window(tk.Tk):
         restore_path = self.working_dir.get()
 
         if not save_to_restore:
-            self.log.insert('end', f'''No file selected... \n''')
+            self.update_log(f'''No file selected...''')
+
             return
 
         # backup previous save file just in case
-        self.log.insert('end', f'''Backing up previous save just in case... \n''')
+        self.update_log(f'''Backing up previous save just in case...''')
         self.backup_file_to_zip()
 
         # restore save file
         shutil.unpack_archive(save_to_restore, restore_path, 'zip')
-        self.log.insert('end', f'''Restored : {save_to_restore} \n''')
+        self.update_log(f'''Restored : {save_to_restore}''')
         self.restore_state.set(f'''Restored : {os.path.basename(os.path.normpath(save_to_restore))}''')
+
+    # update log
+    def update_log(self, message):
+        cur_date, cur_time = get_time()
+        self.log.insert('end', f'''{cur_time}: {message} \n''')
+        self.log.see('end')
 
 
 if __name__ == '__main__':
