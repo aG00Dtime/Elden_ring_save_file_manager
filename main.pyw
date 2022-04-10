@@ -112,7 +112,7 @@ class Window(tk.Tk):
         # log area
         self.log = scrolledtext.ScrolledText(self, wrap=tk.WORD, width=80, height=8)
         self.log.grid(row=8, column=0, columnspan=2, sticky=W, pady=10, padx=10)
-        self.log.configure(font='arial 8 ')
+        self.log.config(font='arial 8 ',state=DISABLED)
 
         self.mainloop()
 
@@ -188,9 +188,13 @@ class Window(tk.Tk):
 
     # update log
     def update_log(self, message):
+
         cur_date, cur_time = get_time()
+
+        self.log.config(state=NORMAL)
         self.log.insert('end', f'''{cur_time}: {message} \n''')
         self.log.see('end')
+        self.log.config(state=DISABLED)
 
 
 if __name__ == '__main__':
